@@ -220,11 +220,21 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
           <div className="space-y-4">
             {depositStatus === "selecting" && (
               <>
-                <div className="space-y-3">
-                  <label className="text-sm text-[#A0A0A0] uppercase tracking-wider">
-                    Escolha o valor
+                {/* Header with icon */}
+                <div className="text-center mb-6 pb-4 border-b border-[#2A2A3A]">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full gold-gradient mb-3">
+                    <Wallet className="w-8 h-8 text-[#0B0B0F]" />
+                  </div>
+                  <h3 className="text-xl font-bold gold-text mb-1">Fazer Depósito</h3>
+                  <p className="text-sm text-[#A0A0A0]">Escolha o valor e confirme via PIX</p>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-sm font-semibold text-[#D4AF37] uppercase tracking-wider flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    Valor do Depósito
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {DEPOSIT_AMOUNTS.map((amount) => (
                       <button
                         key={amount}
@@ -232,61 +242,116 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
                           handleDepositSelect(amount)
                           setCustomAmount("")
                         }}
-                        className={`py-3 px-4 rounded-lg font-bold text-sm transition-all duration-300 ${
+                        className={`relative py-4 px-4 rounded-xl font-bold text-base transition-all duration-300 overflow-hidden group ${
                           selectedAmount === amount
-                            ? "gold-gradient text-[#0B0B0F] scale-105"
-                            : "bg-[#1A1A24] text-[#A0A0A0] hover:text-[#D4AF37] hover:bg-[#1A1A24]/80 border border-[#2A2A3A] hover:border-[#D4AF37]/30"
+                            ? "gold-gradient text-[#0B0B0F] scale-[1.03]"
+                            : "bg-gradient-to-br from-[#1A1A24] to-[#12121C] text-[#A0A0A0] hover:text-[#D4AF37] border-2 border-[#2A2A3A] hover:border-[#D4AF37]/50"
                         }`}
                         style={
                           selectedAmount === amount
-                            ? { boxShadow: "0 0 20px rgba(212, 175, 55, 0.4)" }
+                            ? { boxShadow: "0 0 25px rgba(212, 175, 55, 0.5), 0 4px 15px rgba(0, 0, 0, 0.3)" }
                             : {}
                         }
                       >
-                        R$ {amount}
+                        {/* Shine effect */}
+                        {selectedAmount === amount && (
+                          <div 
+                            className="absolute inset-0 opacity-30"
+                            style={{
+                              background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.4) 50%, transparent 70%)',
+                              animation: 'shimmer 2s infinite',
+                            }}
+                          />
+                        )}
+                        <div className="relative z-10 flex flex-col items-center gap-1">
+                          <span className="text-xs opacity-70">R$</span>
+                          <span className="text-lg">{amount}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex-1 h-px bg-[#2A2A3A]" />
-                    <span className="text-xs text-[#A0A0A0] uppercase tracking-wider">ou</span>
-                    <div className="flex-1 h-px bg-[#2A2A3A]" />
+                <div className="relative mt-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent" />
+                    <span className="text-xs font-semibold text-[#D4AF37] uppercase tracking-widest px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20">
+                      ou
+                    </span>
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent" />
                   </div>
                   
-                  <label className="text-sm text-[#A0A0A0] uppercase tracking-wider block mb-2">
-                    Valor personalizado
+                  <label className="text-sm font-semibold text-[#D4AF37] uppercase tracking-wider block mb-3 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-[#D4AF37] rounded-full" />
+                    Valor Personalizado
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A0A0A0] font-semibold">
-                      R$
-                    </span>
-                    <input
-                      type="number"
-                      value={customAmount}
-                      onChange={(e) => {
-                        setCustomAmount(e.target.value)
-                        setSelectedAmount(null)
-                      }}
-                      placeholder="0,00"
-                      className="w-full py-3 pl-12 pr-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F5F5F5] placeholder:text-[#666] focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
-                      min="1"
-                      step="0.01"
-                    />
+                  <div className="relative group">
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#D4AF37]/20 to-[#9333EA]/20 opacity-0 group-focus-within:opacity-100 blur-lg transition-opacity duration-300" />
+                    <div className="relative">
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[#D4AF37] font-bold text-lg">
+                        R$
+                      </span>
+                      <input
+                        type="number"
+                        value={customAmount}
+                        onChange={(e) => {
+                          setCustomAmount(e.target.value)
+                          setSelectedAmount(null)
+                        }}
+                        placeholder="Digite o valor"
+                        className="w-full py-4 pl-14 pr-5 bg-gradient-to-br from-[#1A1A24] to-[#12121C] border-2 border-[#2A2A3A] rounded-xl text-[#F5F5F5] text-lg font-semibold placeholder:text-[#666] focus:outline-none focus:border-[#D4AF37]/60 transition-all duration-300"
+                        min="1"
+                        step="0.01"
+                      />
+                    </div>
                   </div>
+                  <p className="text-xs text-[#A0A0A0] mt-2 ml-1">Valor mínimo: R$ 10,00</p>
                 </div>
+
+                {/* Summary card */}
+                {finalAmount > 0 && (
+                  <div className="glass-card rounded-xl p-4 border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/5 to-transparent">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[#A0A0A0]">Valor a depositar:</span>
+                      <span className="text-2xl font-bold gold-text">R$ {finalAmount.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
 
                 <button
                   onClick={handleConfirmDeposit}
                   disabled={finalAmount <= 0 || isLoading}
-                  className="w-full py-3.5 px-6 rounded-xl font-bold text-sm tracking-wider gold-gradient text-[#0B0B0F] disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform duration-300"
+                  className="relative w-full py-4 px-6 rounded-xl font-bold text-base tracking-wider gold-gradient text-[#0B0B0F] disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden group mt-6"
                   style={{
-                    boxShadow: finalAmount > 0 ? "0 4px 20px rgba(212, 175, 55, 0.4)" : "none",
+                    boxShadow: finalAmount > 0 ? "0 8px 30px rgba(212, 175, 55, 0.5), 0 4px 15px rgba(0, 0, 0, 0.3)" : "none",
                   }}
                 >
-                  {isLoading ? "Processando..." : `Continuar ${finalAmount > 0 ? `• R$ ${finalAmount.toFixed(2)}` : ""}`}
+                  {/* Animated shine effect */}
+                  {!isLoading && finalAmount > 0 && (
+                    <div 
+                      className="absolute inset-0 opacity-40"
+                      style={{
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%)',
+                        animation: 'shimmer 3s infinite',
+                      }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {isLoading ? (
+                      <>
+                        <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                        </svg>
+                        Processando...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownToLine className="w-5 h-5" />
+                        Confirmar Depósito
+                      </>
+                    )}
+                  </span>
                 </button>
               </>
             )}
