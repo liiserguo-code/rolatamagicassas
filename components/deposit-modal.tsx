@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { X, Wallet, ArrowDownToLine, ArrowUpFromLine, Copy, CheckCircle2, Clock, CreditCard } from "lucide-react"
+import { X, Wallet, ArrowDownToLine, ArrowUpFromLine, Copy, CheckCircle2, Clock, CreditCard, AlertCircle } from "lucide-react"
+import { paymentService, formatPixKey, isValidPixKey } from "@/lib/payment-service"
 
 interface DepositModalProps {
   isOpen: boolean
@@ -23,11 +24,16 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
   const [depositStatus, setDepositStatus] = useState<DepositStatus>("selecting")
   const [withdrawStatus, setWithdrawStatus] = useState<WithdrawStatus>("form")
   const [pixKey, setPixKey] = useState("")
+  const [pixKeyType, setPixKeyType] = useState<'cpf' | 'email' | 'phone' | 'random'>('cpf')
   const [withdrawAmount, setWithdrawAmount] = useState("")
   const [copiedPix, setCopiedPix] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
-  // Mock PIX code for demo purposes
-  const mockPixCode = "00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p652040000530398654041.005802BR5925LUXSPIN PAGAMENTOS LTDA6009SAO PAULO62070503***63041D3D"
+  // API response data
+  const [pixCode, setPixCode] = useState("")
+  const [pixQRCode, setPixQRCode] = useState("")
+  const [depositId, setDepositId] = useState("")
 
   if (!isOpen) return null
 
@@ -35,22 +41,36 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
     setSelectedAmount(amount)
   }
 
-  const handleConfirmDeposit = () => {
+  const handleConfirmDeposit = async () => {
     const amount = selectedAmount || parseFloat(customAmount)
     if (amount > 0) {
-      setDepositStatus("processing")
+      setIsLoading(true)
+      setError(null)
       
-      // Simulate API call - Ready for real API integration
-      // TODO: Replace with actual API call
-      // fetch('/api/deposit/pix', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ amount }),
-      //   headers: { 'Content-Type': 'application/json' }
-      // })
-      
-      setTimeout(() => {
-        setDepositStatus("completed")
-      }, 1500)
+      try {
+        console.log("[v0] Creating deposit:", amount)
+        
+        // Call API to create deposit
+        const response = await paymentService.createDeposit({
+          userId: 'demo-user', // TODO: Replace with actual user ID from auth
+          amount
+        })
+
+        if (response.success && response.pixCode && response.pixQRCode) {
+          console.log("[v0] Deposit created successfully:", response.depositId)
+          setPixCode(response.pixCode)
+          setPixQRCode(response.pixQRCode)
+          setDepositId(response.depositId)
+          setDepositStatus("processing")
+        } else {
+          throw new Error('Falha ao criar depósito')
+        }
+      } catch (err) {
+        console.error("[v0] Deposit error:", err)
+        setError(err instanceof Error ? err.message : 'Erro ao processar depósito')
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -63,25 +83,50 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
     onClose()
   }
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount)
+    
+    // Validate inputs
+    if (!isValidPixKey(pixKey, pixKeyType)) {
+      setError('Chave PIX inválida')
+      return
+    }
+    
     if (amount > 0 && amount <= currentBalance && pixKey.trim()) {
-      setWithdrawStatus("pending")
+      setIsLoading(true)
+      setError(null)
       
-      // Simulate API call - Ready for real API integration
-      // TODO: Replace with actual API call
-      // fetch('/api/withdraw/pix', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ amount, pixKey }),
-      //   headers: { 'Content-Type': 'application/json' }
-      // })
-      
-      console.log("[v0] Withdraw request:", { amount, pixKey })
+      try {
+        console.log("[v0] Creating withdrawal:", { amount, pixKey, pixKeyType })
+        
+        // Call API to create withdrawal
+        const response = await paymentService.createWithdrawal({
+          userId: 'demo-user', // TODO: Replace with actual user ID from auth
+          amount,
+          pixKey,
+          pixKeyType
+        })
+
+        if (response.success) {
+          console.log("[v0] Withdrawal created:", response.withdrawalId, "Status:", response.status)
+          setWithdrawStatus("pending")
+          
+          // TODO: Update user balance locally
+          // onDepositComplete?.(-amount)
+        } else {
+          throw new Error(response.message || 'Falha ao criar saque')
+        }
+      } catch (err) {
+        console.error("[v0] Withdrawal error:", err)
+        setError(err instanceof Error ? err.message : 'Erro ao processar saque')
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
   const copyPixCode = () => {
-    navigator.clipboard.writeText(mockPixCode)
+    navigator.clipboard.writeText(pixCode)
     setCopiedPix(true)
     setTimeout(() => setCopiedPix(false), 2000)
   }
@@ -92,8 +137,14 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
     setDepositStatus("selecting")
     setWithdrawStatus("form")
     setPixKey("")
+    setPixKeyType("cpf")
     setWithdrawAmount("")
     setActiveTab("deposit")
+    setError(null)
+    setIsLoading(false)
+    setPixCode("")
+    setPixQRCode("")
+    setDepositId("")
   }
 
   const handleClose = () => {
@@ -155,6 +206,14 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
             </button>
           </div>
         </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-[#DC2626]/10 border border-[#DC2626]/20 flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-[#DC2626]">{error}</p>
+          </div>
+        )}
 
         {/* Deposit Tab */}
         {activeTab === "deposit" && (
@@ -221,13 +280,13 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
 
                 <button
                   onClick={handleConfirmDeposit}
-                  disabled={finalAmount <= 0}
+                  disabled={finalAmount <= 0 || isLoading}
                   className="w-full py-3.5 px-6 rounded-xl font-bold text-sm tracking-wider gold-gradient text-[#0B0B0F] disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform duration-300"
                   style={{
                     boxShadow: finalAmount > 0 ? "0 4px 20px rgba(212, 175, 55, 0.4)" : "none",
                   }}
                 >
-                  Continuar {finalAmount > 0 && `• R$ ${finalAmount.toFixed(2)}`}
+                  {isLoading ? "Processando..." : `Continuar ${finalAmount > 0 ? `• R$ ${finalAmount.toFixed(2)}` : ""}`}
                 </button>
               </>
             )}
@@ -248,45 +307,52 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
                   </div>
                 </div>
 
-                {/* QR Code placeholder */}
+                {/* QR Code */}
                 <div className="flex justify-center">
                   <div 
-                    className="w-48 h-48 bg-white rounded-lg flex items-center justify-center"
+                    className="w-48 h-48 bg-white rounded-lg flex items-center justify-center overflow-hidden"
                     style={{
                       boxShadow: "0 0 30px rgba(212, 175, 55, 0.3)",
                     }}
                   >
-                    <div className="text-center p-4">
-                      <CreditCard className="w-12 h-12 text-[#0B0B0F] mx-auto mb-2" />
-                      <p className="text-xs text-[#666]">QR Code PIX</p>
-                      <p className="text-sm font-bold text-[#0B0B0F]">
-                        R$ {finalAmount.toFixed(2)}
-                      </p>
-                    </div>
+                    {pixQRCode ? (
+                      <img 
+                        src={pixQRCode} 
+                        alt="QR Code PIX" 
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-center p-4">
+                        <CreditCard className="w-12 h-12 text-[#0B0B0F] mx-auto mb-2 animate-pulse" />
+                        <p className="text-xs text-[#666]">Gerando QR Code...</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* PIX Code */}
-                <div className="space-y-2">
-                  <label className="text-xs text-[#A0A0A0] uppercase tracking-wider">
-                    Ou copie o código PIX
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="flex-1 py-2.5 px-3 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-xs text-[#A0A0A0] overflow-hidden">
-                      <code className="break-all">{mockPixCode}</code>
+                {pixCode && (
+                  <div className="space-y-2">
+                    <label className="text-xs text-[#A0A0A0] uppercase tracking-wider">
+                      Ou copie o código PIX
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 py-2.5 px-3 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-xs text-[#A0A0A0] overflow-hidden">
+                        <code className="break-all">{pixCode}</code>
+                      </div>
+                      <button
+                        onClick={copyPixCode}
+                        className="px-4 py-2.5 rounded-lg bg-[#1A1A24] border border-[#2A2A3A] hover:border-[#D4AF37]/50 transition-colors"
+                      >
+                        {copiedPix ? (
+                          <CheckCircle2 className="w-5 h-5 text-[#059669]" />
+                        ) : (
+                          <Copy className="w-5 h-5 text-[#A0A0A0]" />
+                        )}
+                      </button>
                     </div>
-                    <button
-                      onClick={copyPixCode}
-                      className="px-4 py-2.5 rounded-lg bg-[#1A1A24] border border-[#2A2A3A] hover:border-[#D4AF37]/50 transition-colors"
-                    >
-                      {copiedPix ? (
-                        <CheckCircle2 className="w-5 h-5 text-[#059669]" />
-                      ) : (
-                        <Copy className="w-5 h-5 text-[#A0A0A0]" />
-                      )}
-                    </button>
                   </div>
-                </div>
+                )}
 
                 <button
                   onClick={handleFinishDeposit}
@@ -368,13 +434,51 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
 
                 <div className="space-y-2">
                   <label className="text-sm text-[#A0A0A0] uppercase tracking-wider">
+                    Tipo de Chave PIX
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: 'cpf', label: 'CPF' },
+                      { value: 'email', label: 'E-mail' },
+                      { value: 'phone', label: 'Telefone' },
+                      { value: 'random', label: 'Aleatória' }
+                    ].map((type) => (
+                      <button
+                        key={type.value}
+                        onClick={() => {
+                          setPixKeyType(type.value as typeof pixKeyType)
+                          setPixKey("")
+                        }}
+                        className={`py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                          pixKeyType === type.value
+                            ? "bg-[#D4AF37] text-[#0B0B0F]"
+                            : "bg-[#1A1A24] text-[#A0A0A0] border border-[#2A2A3A] hover:border-[#D4AF37]/30"
+                        }`}
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-[#A0A0A0] uppercase tracking-wider">
                     Chave PIX
                   </label>
                   <input
                     type="text"
                     value={pixKey}
-                    onChange={(e) => setPixKey(e.target.value)}
-                    placeholder="Digite sua chave PIX (CPF, email, telefone ou chave aleatória)"
+                    onChange={(e) => {
+                      const formatted = formatPixKey(e.target.value, pixKeyType)
+                      setPixKey(formatted)
+                      setError(null)
+                    }}
+                    placeholder={
+                      pixKeyType === 'cpf' ? '000.000.000-00' :
+                      pixKeyType === 'email' ? 'email@exemplo.com' :
+                      pixKeyType === 'phone' ? '(00) 00000-0000' :
+                      'Chave aleatória'
+                    }
                     className="w-full py-3 px-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F5F5F5] placeholder:text-[#666] focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
                   />
                   <p className="text-xs text-[#666]">
@@ -385,6 +489,7 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
                 <button
                   onClick={handleWithdraw}
                   disabled={
+                    isLoading ||
                     !pixKey.trim() ||
                     parseFloat(withdrawAmount) <= 0 ||
                     parseFloat(withdrawAmount) > currentBalance
@@ -397,7 +502,7 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
                         : "none",
                   }}
                 >
-                  Solicitar Saque
+                  {isLoading ? "Processando..." : "Solicitar Saque"}
                 </button>
 
                 <div className="p-3 rounded-lg bg-[#DC2626]/10 border border-[#DC2626]/20">
