@@ -18,6 +18,24 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
   const [finalOuterValue, setFinalOuterValue] = useState<string | null>(null)
   const [finalInnerValue, setFinalInnerValue] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const [particles, setParticles] = useState<Array<{ translateY: number; opacity: number }>>([])
+  const [sparklePositions, setSparklePositions] = useState<Array<{ top: string; left: string }>>([])
+
+  // Initialize particles on client side only to avoid hydration mismatch
+  useEffect(() => {
+    setParticles(
+      Array.from({ length: 8 }, () => ({
+        translateY: 180 + Math.random() * 20,
+        opacity: 0.4 + Math.random() * 0.3,
+      }))
+    )
+    setSparklePositions(
+      Array.from({ length: 6 }, () => ({
+        top: `${20 + Math.random() * 60}%`,
+        left: `${20 + Math.random() * 60}%`,
+      }))
+    )
+  }, [])
 
   const spin = useCallback(() => {
     if (isSpinning) return
@@ -98,15 +116,15 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
       
       {/* Spinning ambient particles */}
       <div className="absolute w-[400px] h-[400px] md:w-[500px] md:h-[500px] animate-spin-slow">
-        {[...Array(8)].map((_, i) => (
+        {particles.map((particle, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-[#D4AF37] rounded-full"
             style={{
               top: '50%',
               left: '50%',
-              transform: `rotate(${i * 45}deg) translateY(-${180 + Math.random() * 20}px)`,
-              opacity: 0.4 + Math.random() * 0.3,
+              transform: `rotate(${i * 45}deg) translateY(-${particle.translateY}px)`,
+              opacity: particle.opacity,
               boxShadow: '0 0 8px rgba(212, 175, 55, 0.6)',
             }}
           />
@@ -381,13 +399,13 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
         {/* Win sparkles */}
         {isWin && (
           <div className="absolute inset-0 pointer-events-none">
-            {[...Array(6)].map((_, i) => (
+            {sparklePositions.map((position, i) => (
               <Sparkles
                 key={i}
                 className="absolute text-[#D4AF37] animate-sparkle"
                 style={{
-                  top: `${20 + Math.random() * 60}%`,
-                  left: `${20 + Math.random() * 60}%`,
+                  top: position.top,
+                  left: position.left,
                   width: '20px',
                   height: '20px',
                   animationDelay: `${i * 0.3}s`,
