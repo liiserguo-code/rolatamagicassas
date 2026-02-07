@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Volume2, VolumeX, HelpCircle, Crown, Zap, TrendingUp, TrendingDown, Wallet } from "lucide-react"
+import { soundManager } from "@/lib/sound-manager"
 
 interface GameControlsProps {
   balance: number
@@ -30,6 +31,11 @@ export function GameControls({
 }: GameControlsProps) {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [mode] = useState("NORMAL")
+
+  // Sync sound manager with toggle state
+  useEffect(() => {
+    soundManager.setEnabled(soundEnabled)
+  }, [soundEnabled])
 
   const isWin = gain !== null && gain > 0
   const isLoss = gain !== null && gain < 0
@@ -184,7 +190,12 @@ export function GameControls({
           {BET_OPTIONS.map((option) => (
             <button
               key={option}
-              onClick={() => !isSpinning && onBetChange(option)}
+              onClick={() => {
+                if (!isSpinning) {
+                  soundManager.playClickSound()
+                  onBetChange(option)
+                }
+              }}
               disabled={isSpinning}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 relative overflow-hidden ${
                 betAmount === option

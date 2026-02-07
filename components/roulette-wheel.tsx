@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Sparkles } from "lucide-react"
+import { soundManager } from "@/lib/sound-manager"
 
 interface RouletteWheelProps {
   onSpinComplete?: (outerValue: string, innerValue: string) => void
@@ -42,6 +43,9 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
     
     setShowResult(false)
     onSpin()
+    
+    // Play spin sound
+    soundManager.playSpinSound(5000)
     
     // Weighted probability for outer wheel (heavily favors 0x loss)
     // 0x: 72%, 2x: 15%, 5x: 7%, 10x: 3.5%, 15x: 1.5%, 20x: 0.8%, 100x: 0.2%
@@ -88,6 +92,14 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
     if (isSpinning && finalOuterValue && finalInnerValue) {
       const timer = setTimeout(() => {
         setShowResult(true)
+        
+        // Play win or lose sound
+        if (finalOuterValue !== "0x") {
+          soundManager.playWinSound()
+        } else {
+          soundManager.playLoseSound()
+        }
+        
         onSpinComplete?.(finalOuterValue, finalInnerValue)
       }, 5000)
       return () => clearTimeout(timer)

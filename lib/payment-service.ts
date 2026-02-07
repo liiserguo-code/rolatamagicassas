@@ -1,5 +1,6 @@
 import type { DepositRequest, DepositResponse } from '@/app/api/deposit/route'
 import type { WithdrawalRequest, WithdrawalResponse } from '@/app/api/withdrawal/route'
+import { logger } from './logger'
 
 export interface Deposit {
   id: string
@@ -25,7 +26,14 @@ class PaymentService {
    * Create a new deposit
    */
   async createDeposit(data: Omit<DepositRequest, 'paymentMethod'>): Promise<DepositResponse> {
+    const startTime = Date.now()
+    
     try {
+      logger.logPaymentEvent('deposit_initiated', { 
+        userId: data.userId, 
+        amount: data.amount 
+      })
+      
       const response = await fetch(`${this.baseUrl}/deposit`, {
         method: 'POST',
         headers: {
@@ -37,14 +45,33 @@ class PaymentService {
         }),
       })
 
+      const duration = Date.now() - startTime
+      logger.logApiCall('POST', '/api/deposit', response.status, duration)
+
       if (!response.ok) {
         const error = await response.json()
+        logger.logPaymentEvent('deposit_failed', {
+          userId: data.userId,
+          amount: data.amount,
+          error: error.message
+        })
         throw new Error(error.message || 'Erro ao criar depósito')
       }
 
-      return await response.json()
+      const result = await response.json()
+      logger.logPaymentEvent('deposit_created', {
+        userId: data.userId,
+        amount: data.amount,
+        depositId: result.depositId
+      })
+      
+      return result
     } catch (error) {
-      console.error('[PaymentService] Create deposit error:', error)
+      logger.error('PaymentService: Create deposit error', {
+        userId: data.userId,
+        amount: data.amount,
+        error: error instanceof Error ? error.message : String(error)
+      })
       throw error
     }
   }

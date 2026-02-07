@@ -7,7 +7,10 @@ import { GameControls } from "@/components/game-controls"
 import { RegisterModal } from "@/components/register-modal"
 import { FloatingNotification } from "@/components/floating-notification"
 import { DepositModal } from "@/components/deposit-modal"
+import { LevelDisplay } from "@/components/level-display"
 import { User, LogOut } from "lucide-react"
+import { calculateXPGain } from "@/lib/level-system"
+import { logger } from "@/lib/logger"
 
 interface AuthUser {
   name: string
@@ -23,14 +26,26 @@ export default function Home() {
   const [showRegister, setShowRegister] = useState(false)
   const [showDeposit, setShowDeposit] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
+  const [totalXP, setTotalXP] = useState(0)
 
   // Check for existing session on mount
   useEffect(() => {
     const savedUser = localStorage.getItem("luxspin_current_user")
+    const savedXP = localStorage.getItem("luxspin_total_xp")
     if (savedUser) {
       setCurrentUser(JSON.parse(savedUser))
     }
+    if (savedXP) {
+      setTotalXP(parseInt(savedXP))
+    }
   }, [])
+
+  // Save XP to localStorage when it changes
+  useEffect(() => {
+    if (totalXP > 0) {
+      localStorage.setItem("luxspin_total_xp", totalXP.toString())
+    }
+  }, [totalXP])
 
   const [insufficientBalance, setInsufficientBalance] = useState(false)
 
@@ -39,13 +54,26 @@ export default function Home() {
       // Only show register if not logged in AND has no balance
       if (!currentUser) {
         setShowRegister(true)
+        logger.logGameEvent('spin_blocked_no_user', { betAmount })
       } else {
         // Show insufficient balance warning
         setInsufficientBalance(true)
         setTimeout(() => setInsufficientBalance(false), 2000)
+        logger.logGameEvent('spin_blocked_insufficient_balance', { 
+          balance, 
+          betAmount,
+          userId: currentUser.email 
+        })
       }
       return
     }
+    
+    logger.logGameEvent('spin_started', { 
+      betAmount, 
+      balance: balance - betAmount,
+      userId: currentUser?.email 
+    })
+    
     setIsSpinning(true)
     setBalance(prev => prev - betAmount)
     setGain(null)
@@ -57,6 +85,22 @@ export default function Home() {
     // Calculate winnings
     const outerMultiplier = parseFloat(outerValue.replace('x', ''))
     const innerMultiplier = parseFloat(innerValue.replace('x', ''))
+    
+    const won = outerMultiplier > 0
+    
+    // Calculate and award XP
+    const xpGained = calculateXPGain(betAmount, won)
+    setTotalXP(prev => prev + xpGained)
+    
+    logger.logGameEvent('spin_completed', {
+      outerValue,
+      innerValue,
+      won,
+      xpGained,
+      totalXP: totalXP + xpGained,
+      betAmount,
+      userId: currentUser?.email
+    })
     
     // If outer is 0x, lose based on inner multiplier (can lose more than bet)
     if (outerMultiplier === 0) {
@@ -72,7 +116,7 @@ export default function Home() {
     
     setGain(winAmount)
     setBalance(prev => prev + winAmount)
-  }, [betAmount])
+  }, [betAmount, totalXP])
 
   const handleDeposit = useCallback(() => {
     setShowDeposit(true)
@@ -90,13 +134,23 @@ export default function Home() {
     setCurrentUser(user)
     // Give welcome bonus
     setBalance(prev => prev + 10)
+    
+    logger.logAuthEvent('user_registered', {
+      email: user.email,
+      name: user.name,
+      welcomeBonus: 10
+    })
   }, [])
 
   const handleLogout = useCallback(() => {
+    logger.logAuthEvent('user_logout', {
+      email: currentUser?.email
+    })
+    
     localStorage.removeItem("luxspin_current_user")
     setCurrentUser(null)
     setBalance(0)
-  }, [])
+  }, [currentUser])
 
   return (
     <main className="min-h-screen relative overflow-hidden">
@@ -154,12 +208,16 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Welcome message for logged in users */}
+          {/* Welcome message and level display for logged in users */}
           {currentUser && (
-            <div className="mt-3 text-center">
-              <p className="text-sm text-[#A0A0A0]">
-                Bem-vindo, <span className="gold-text font-semibold">{currentUser.name.split(' ')[0]}</span>
-              </p>
+            <div className="mt-3 space-y-2">
+              <div className="text-center">
+                <p className="text-sm text-[#A0A0A0]">
+                  Bem-vindo, <span className="gold-text font-semibold">{currentUser.name.split(' ')[0]}</span>
+                </p>
+              </div>
+              {/* Level display */}
+              <LevelDisplay totalXP={totalXP} />
             </div>
           )}
         </header>
