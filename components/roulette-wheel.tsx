@@ -59,7 +59,7 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin, spinSpeed = 
     const innerWeights = [65, 25, 8, 2]
     const innerRandom = Math.random() * 100
     let innerFinal = 0
-    cumulative = 0
+    let cumulative = 0
     for (let i = 0; i < innerWeights.length; i++) {
       cumulative += innerWeights[i]
       if (innerRandom < cumulative) {
@@ -79,7 +79,7 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin, spinSpeed = 
     setInnerRotation(prev => prev + innerDegrees)
     setFinalOuterValue(OUTER_VALUES[outerFinal])
     setFinalInnerValue(INNER_VALUES[innerFinal])
-  }, [isSpinning, onSpin])
+  }, [isSpinning, onSpin, spinDuration])
 
   useEffect(() => {
     if (isSpinning && finalOuterValue && finalInnerValue) {

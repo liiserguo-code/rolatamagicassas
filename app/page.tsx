@@ -224,77 +224,13 @@ export default function Home() {
         </header>
 
         {/* Roulette wheel */}
-        <div className="flex-1 flex flex-col items-center justify-center py-4 gap-6">
+        <div className="flex-1 flex flex-col items-center justify-center py-4">
           <RouletteWheel
             isSpinning={isSpinning}
             onSpin={handleSpin}
             onSpinComplete={handleSpinComplete}
             spinSpeed={spinMode === 'RÁPIDO' ? 'fast' : 'normal'}
           />
-          
-          {/* Spin button below wheel */}
-          <button
-            onClick={handleSpin}
-            disabled={isSpinning}
-            className="relative px-12 py-4 rounded-2xl font-bold text-lg tracking-widest uppercase overflow-hidden group disabled:cursor-not-allowed"
-            style={{
-              background: isSpinning 
-                ? 'linear-gradient(135deg, #4A4A4A 0%, #2A2A2A 100%)'
-                : 'linear-gradient(135deg, #F7E98E 0%, #D4AF37 50%, #996515 100%)',
-              boxShadow: isSpinning 
-                ? '0 4px 15px rgba(0, 0, 0, 0.3)'
-                : '0 4px 30px rgba(212, 175, 55, 0.5), 0 0 60px rgba(212, 175, 55, 0.2)',
-            }}
-          >
-            {/* Animated background glow */}
-            {!isSpinning && (
-              <div 
-                className="absolute inset-0 animate-pulse opacity-50"
-                style={{
-                  background: 'radial-gradient(circle at center, rgba(247, 233, 142, 0.4) 0%, transparent 70%)',
-                }}
-              />
-            )}
-            
-            {/* Light sweep effect */}
-            {!isSpinning && (
-              <div 
-                className="absolute inset-0 animate-light-sweep opacity-40"
-                style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)',
-                  width: '50%',
-                }}
-              />
-            )}
-            
-            <span className={`relative z-10 flex items-center gap-3 ${isSpinning ? 'text-[#666]' : 'text-[#0B0B0F]'}`}>
-              {isSpinning ? (
-                <>
-                  <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                  </svg>
-                  GIRANDO...
-                </>
-              ) : (
-                <>
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                  </svg>
-                  GIRAR ROLETA
-                </>
-              )}
-            </span>
-            
-            {/* Hover effect */}
-            <div 
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%)',
-              }}
-            />
-          </button>
         </div>
 
         {/* Game controls */}
