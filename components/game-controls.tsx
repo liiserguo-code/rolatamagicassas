@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Volume2, VolumeX, HelpCircle, Crown, Zap, TrendingUp, TrendingDown } from "lucide-react"
+import { Volume2, VolumeX, HelpCircle, Crown, Zap, TrendingUp, TrendingDown, Wallet } from "lucide-react"
 
 interface GameControlsProps {
   balance: number
@@ -51,6 +51,17 @@ export function GameControls({
         </button>
 
         <div className="flex items-center gap-2">
+          {/* Small Deposit/Wallet button */}
+          <button
+            onClick={onDeposit}
+            className="px-3 py-2 rounded-xl glass-card hover:bg-white/10 transition-all duration-300 group flex items-center gap-1.5"
+            aria-label="Depositar"
+            title="Depositar"
+          >
+            <Wallet className="w-4 h-4 text-[#D4AF37] group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-semibold gold-text">R$ {balance.toFixed(2)}</span>
+          </button>
+          
           <button
             className="p-2.5 rounded-xl glass-card hover:bg-white/10 transition-all duration-300 group"
             aria-label="Help"

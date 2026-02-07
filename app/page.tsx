@@ -6,6 +6,7 @@ import { RouletteWheel } from "@/components/roulette-wheel"
 import { GameControls } from "@/components/game-controls"
 import { RegisterModal } from "@/components/register-modal"
 import { FloatingNotification } from "@/components/floating-notification"
+import { DepositModal } from "@/components/deposit-modal"
 import { User, LogOut } from "lucide-react"
 
 interface AuthUser {
@@ -20,6 +21,7 @@ export default function Home() {
   const [gain, setGain] = useState<number | null>(null)
   const [isSpinning, setIsSpinning] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
+  const [showDeposit, setShowDeposit] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
 
   // Check for existing session on mount
@@ -73,8 +75,11 @@ export default function Home() {
   }, [betAmount])
 
   const handleDeposit = useCallback(() => {
-    // For demo, add R$ 50,00
-    setBalance(prev => prev + 50)
+    setShowDeposit(true)
+  }, [])
+
+  const handleDepositComplete = useCallback((amount: number) => {
+    setBalance(prev => prev + amount)
   }, [])
 
   const handleBetChange = useCallback((amount: number) => {
@@ -254,6 +259,14 @@ export default function Home() {
         isOpen={showRegister}
         onClose={() => setShowRegister(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* Deposit modal */}
+      <DepositModal
+        isOpen={showDeposit}
+        onClose={() => setShowDeposit(false)}
+        onDepositComplete={handleDepositComplete}
+        currentBalance={balance}
       />
     </main>
   )
