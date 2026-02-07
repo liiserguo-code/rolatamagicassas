@@ -111,8 +111,8 @@ export function DepositModal({ isOpen, onClose, onDepositComplete, currentBalanc
           console.log("[v0] Withdrawal created:", response.withdrawalId, "Status:", response.status)
           setWithdrawStatus("pending")
           
-          // TODO: Update user balance locally
-          // onDepositComplete?.(-amount)
+          // Update user balance - deduct withdrawal amount
+          onDepositComplete?.(-amount)
         } else {
           throw new Error(response.message || 'Falha ao criar saque')
         }
