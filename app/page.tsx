@@ -27,6 +27,7 @@ export default function Home() {
   const [showDeposit, setShowDeposit] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [totalXP, setTotalXP] = useState(0)
+  const [spinMode, setSpinMode] = useState<'NORMAL' | 'RÁPIDO'>('NORMAL')
 
   // Check for existing session on mount
   useEffect(() => {
@@ -228,6 +229,7 @@ export default function Home() {
             isSpinning={isSpinning}
             onSpin={handleSpin}
             onSpinComplete={handleSpinComplete}
+            spinSpeed={spinMode === 'RÁPIDO' ? 'fast' : 'normal'}
           />
           
           {/* Spin button below wheel */}
@@ -306,6 +308,8 @@ export default function Home() {
           isSpinning={isSpinning}
           isLoggedIn={!!currentUser}
           insufficientBalance={insufficientBalance}
+          mode={spinMode}
+          onModeChange={setSpinMode}
         />
       </div>
 

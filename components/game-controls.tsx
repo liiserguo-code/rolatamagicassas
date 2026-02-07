@@ -14,6 +14,8 @@ interface GameControlsProps {
   isSpinning: boolean
   isLoggedIn?: boolean
   insufficientBalance?: boolean
+  onModeChange?: (mode: 'NORMAL' | 'RÁPIDO') => void
+  mode?: 'NORMAL' | 'RÁPIDO'
 }
 
 const BET_OPTIONS = [0.50, 1.00, 2.00, 5.00, 10.00, 20.00]
@@ -28,9 +30,10 @@ export function GameControls({
   isSpinning,
   isLoggedIn = false,
   insufficientBalance = false,
+  onModeChange,
+  mode = 'NORMAL',
 }: GameControlsProps) {
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [mode] = useState("NORMAL")
 
   // Sync sound manager with toggle state
   useEffect(() => {
@@ -108,12 +111,43 @@ export function GameControls({
         <div className="absolute inset-0 rounded-xl animate-border-glow opacity-50" style={{ border: '1px solid rgba(212, 175, 55, 0.3)' }} />
       </button>
 
-      {/* Mode selector with icon */}
+      {/* Mode selector with toggle */}
       <div className="glass-card rounded-xl p-3 mb-4 animate-border-glow">
-        <div className="flex items-center justify-center gap-3">
-          <Crown className="w-4 h-4 text-[#D4AF37]" />
-          <span className="text-[#A0A0A0] text-sm">Modo:</span>
-          <span className="gold-text font-bold tracking-wider">{mode}</span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Crown className="w-4 h-4 text-[#D4AF37]" />
+            <span className="text-[#A0A0A0] text-sm">Modo:</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                soundManager.playClickSound()
+                onModeChange?.('NORMAL')
+              }}
+              disabled={isSpinning}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+                mode === 'NORMAL'
+                  ? 'gold-gradient text-[#0B0B0F]'
+                  : 'bg-[#1A1A24] text-[#A0A0A0] border border-[#2A2A3A] hover:border-[#D4AF37]/30'
+              } ${isSpinning ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              NORMAL
+            </button>
+            <button
+              onClick={() => {
+                soundManager.playClickSound()
+                onModeChange?.('RÁPIDO')
+              }}
+              disabled={isSpinning}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+                mode === 'RÁPIDO'
+                  ? 'gold-gradient text-[#0B0B0F]'
+                  : 'bg-[#1A1A24] text-[#A0A0A0] border border-[#2A2A3A] hover:border-[#D4AF37]/30'
+              } ${isSpinning ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              RÁPIDO
+            </button>
+          </div>
         </div>
       </div>
 

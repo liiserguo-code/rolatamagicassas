@@ -8,12 +8,13 @@ interface RouletteWheelProps {
   onSpinComplete?: (outerValue: string, innerValue: string) => void
   isSpinning: boolean
   onSpin: () => void
+  spinSpeed?: 'normal' | 'fast'
 }
 
 const OUTER_VALUES = ["0x", "2x", "5x", "10x", "15x", "20x", "50x"]
 const INNER_VALUES = ["1x", "2x", "3x", "4x"]
 
-export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWheelProps) {
+export function RouletteWheel({ onSpinComplete, isSpinning, onSpin, spinSpeed = 'normal' }: RouletteWheelProps) {
   const [outerRotation, setOuterRotation] = useState(0)
   const [innerRotation, setInnerRotation] = useState(0)
   const [finalOuterValue, setFinalOuterValue] = useState<string | null>(null)
@@ -21,6 +22,9 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
   const [showResult, setShowResult] = useState(false)
   const [particles, setParticles] = useState<Array<{ translateY: number; opacity: number }>>([])
   const [sparklePositions, setSparklePositions] = useState<Array<{ top: string; left: string }>>([])
+  
+  // Dynamic spin duration based on speed mode
+  const spinDuration = spinSpeed === 'fast' ? 2500 : 5000
 
   // Initialize particles on client side only to avoid hydration mismatch
   useEffect(() => {
@@ -44,8 +48,8 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
     setShowResult(false)
     onSpin()
     
-    // Play spin sound
-    soundManager.playSpinSound(5000)
+    // Play spin sound with dynamic duration
+    soundManager.playSpinSound(spinDuration)
     
     // Weighted probability for outer wheel (heavily favors 0x loss)
     // 0x: 72%, 2x: 15%, 5x: 7%, 10x: 3.5%, 15x: 1.5%, 20x: 0.8%, 100x: 0.2%
@@ -101,10 +105,10 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
         }
         
         onSpinComplete?.(finalOuterValue, finalInnerValue)
-      }, 5000)
+      }, spinDuration)
       return () => clearTimeout(timer)
     }
-  }, [isSpinning, finalOuterValue, finalInnerValue, onSpinComplete])
+  }, [isSpinning, finalOuterValue, finalInnerValue, onSpinComplete, spinDuration])
 
   const isWin = showResult && finalOuterValue && finalOuterValue !== "0x"
   const isLoss = showResult && finalOuterValue === "0x"
@@ -186,7 +190,7 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
             style={{
               background: 'linear-gradient(180deg, #1A1A24 0%, #0B0B0F 100%)',
               transform: `rotate(${outerRotation}deg)`,
-              transition: isSpinning ? 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
+              transition: isSpinning ? `transform ${spinDuration}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)` : 'none',
               boxShadow: 'inset 0 0 40px rgba(0, 0, 0, 0.5)',
             }}
           >
@@ -299,7 +303,7 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin }: RouletteWh
             style={{
               background: 'radial-gradient(circle at 30% 30%, #1A1A24 0%, #0B0B0F 100%)',
               transform: `rotate(${innerRotation}deg)`,
-              transition: isSpinning ? 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
+              transition: isSpinning ? `transform ${spinDuration}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)` : 'none',
               boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
             }}
           >
