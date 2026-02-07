@@ -51,19 +51,8 @@ export function RouletteWheel({ onSpinComplete, isSpinning, onSpin, spinSpeed = 
     // Play spin sound with dynamic duration
     soundManager.playSpinSound(spinDuration)
     
-    // Weighted probability for outer wheel (heavily favors 0x loss)
-    // 0x: 72%, 2x: 15%, 5x: 7%, 10x: 3.5%, 15x: 1.5%, 20x: 0.8%, 100x: 0.2%
-    const outerWeights = [72, 15, 7, 3.5, 1.5, 0.8, 0.2]
-    const outerRandom = Math.random() * 100
-    let outerFinal = 0
-    let cumulative = 0
-    for (let i = 0; i < outerWeights.length; i++) {
-      cumulative += outerWeights[i]
-      if (outerRandom < cumulative) {
-        outerFinal = i
-        break
-      }
-    }
+    // Always lose - outer wheel always lands on 0x
+    const outerFinal = 0
     
     // Weighted probability for inner wheel (heavily favors lower multipliers)
     // 1x: 65%, 2x: 25%, 3x: 8%, 4x: 2%
